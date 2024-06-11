@@ -6,6 +6,7 @@ import (
 	"io"
 	"monkeylang/src/evaluator"
 	"monkeylang/src/lexer"
+	"monkeylang/src/object"
 	"monkeylang/src/parser"
 )
 
@@ -13,6 +14,7 @@ const PROMT = ">> "
 
 func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
+	env := object.NewEnvironment()
 	for {
 		fmt.Printf(PROMT)
 		scanned := scanner.Scan()
@@ -28,7 +30,7 @@ func Start(in io.Reader, out io.Writer) {
 		if len(p.Errors()) != 0 {
 			printParseErrors(out, p.Errors())
 		}
-		evaluated := evaluator.Eval(program)
+		evaluated := evaluator.Eval(program, env)
 
 		if evaluated != nil {
 			io.WriteString(out, evaluated.Inspect())
