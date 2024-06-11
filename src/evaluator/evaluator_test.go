@@ -145,7 +145,13 @@ func TestIfElseExpressions(t *testing.T) {
 		evaluated := testEval(tt.input)
 		integer, ok := tt.expected.(int)
 		if ok {
-			testIntegerObject(t, evaluated, int64(integer))
+			returnValue, ok := evaluated.(*object.ReturnValue)
+			if ok {
+				testIntegerObject(t, returnValue.Value, int64(integer))
+			} else {
+				testIntegerObject(t, evaluated, int64(integer))
+			}
+
 		} else {
 			testNullObject(t, evaluated)
 		}
@@ -173,6 +179,60 @@ func TestReturnStatements(t *testing.T) {
 
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
-		testIntegerObject(t, evaluated, tt.expected)
+		integer := evaluated.(*object.ReturnValue).Value
+		testIntegerObject(t, integer, tt.expected)
+	}
+}
+
+func TestErrorHandling(t *testing.T) {
+	tests := []struct {
+		input           string
+		expectedMessage string
+	}{
+		{
+			"5 + true;",
+			"type mismatch: INTEGER + BOOLEAN",
+		},
+		{
+			"5 + true; 5;",
+			"type mismatch: INTEGER + BOOLEAN",
+		},
+		{
+			"-true",
+			"unknown operator: -BOOLEAN",
+		},
+		{
+			"true + false;",
+			"unknown operator: BOOLEAN + BOOLEAN",
+		},
+		{
+			"if (10 > 1) { true + false; }",
+			"unknown operator: BOOLEAN + BOOLEAN",
+		},
+		{
+			"if (10 > 1) { true + false; }",
+			"unknown operator: BOOLEAN + BOOLEAN",
+		},
+		{
+			`
+              if (10 > 1) {
+                  if (10 > 1) {
+                     return true + false;
+                    }
+                 return 1; 
+			 }`,
+			"unknown operator: BOOLEAN + BOOLEAN",
+		},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		errObj, ok := evaluated.(*object.Error)
+		if !ok {
+			t.Errorf("no error object returned, go=%T(%+v)", evaluated, evaluated)
+		}
+		if errObj.Message != tt.expectedMessage {
+			t.Errorf("wrong error message . expected =%q, got=%q", tt.expectedMessage, errObj.Message)
+		}
 	}
 }
