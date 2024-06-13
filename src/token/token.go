@@ -63,4 +63,5 @@ const (
 	TRUE     = "TRUE"
 	FALSE    = "FALSE"
 	RETURN   = "RETURN"
+	STRING   = "STRING"
 )
